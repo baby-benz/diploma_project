@@ -2,6 +2,7 @@ package com.itmo.owner.domain.entity;
 
 import com.vladmihalcea.hibernate.type.basic.PostgreSQLEnumType;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
@@ -11,6 +12,7 @@ import javax.validation.constraints.NotNull;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @Entity(name = "sensor")
 @TypeDef(
         name = "PGSQL_ENUM",
@@ -61,4 +63,24 @@ public class Sensor {
     @JoinColumn(name = "equipment_id")
     @NotNull
     private Equipment equipment;
+
+    public Sensor(Sensor another) {
+        this.id = another.id;
+        this.rangeMin = another.rangeMin;
+        this.rangeMax = another.rangeMax;
+        this.unit = another.unit;
+        this.sensorType = another.sensorType;
+        this.equipment = new Equipment(another.equipment);
+    }
+
+    @Override
+    public String toString() {
+        return "Sensor{" +
+                "id=" + id +
+                ", rangeMin=" + rangeMin +
+                ", rangeMax=" + rangeMax +
+                ", unit='" + unit + '\'' +
+                ", sensorType=" + sensorType +
+                '}';
+    }
 }

@@ -61,4 +61,16 @@ public class Sensor {
     @JoinColumn(name = "equipment_id")
     @NotNull
     private Equipment equipment;
+
+    @Override
+    public String toString() {
+        return "Sensor{" +
+                "id=" + id +
+                ", rangeMin=" + rangeMin +
+                ", rangeMax=" + rangeMax +
+                ", unit='" + unit + '\'' +
+                ", sensorType=" + sensorType +
+                ", equipment=" + equipment +
+                '}';
+    }
 }
