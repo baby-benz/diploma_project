@@ -49,4 +49,14 @@ public class Organization {
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "organization")
     private Set<EquipmentOrganization> equipment;
+
+    @Override
+    public String toString() {
+        return "Organization{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", organizationType=" + organizationType +
+                ", address='" + address + '\'' +
+                '}';
+    }
 }

@@ -47,6 +47,17 @@ public class Organization {
     @Column(columnDefinition = "VARCHAR(100)")
     private String address;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "organization")
+    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
     private Set<EquipmentOrganization> equipment;
+
+    @Override
+    public String toString() {
+        return "Organization{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", organizationType=" + organizationType +
+                ", address='" + address + '\'' +
+                ", equipment=" + equipment +
+                '}';
+    }
 }
