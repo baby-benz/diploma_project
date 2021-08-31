@@ -5,7 +5,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Objects;
 
 @Setter
@@ -28,13 +28,13 @@ public class EquipmentOrganization {
      */
     @Column(columnDefinition = "DATE")
     @NotNull
-    private Date startDate;
+    private LocalDate startDate;
 
     /**
      * Поле endDate - дата окончания действия договора
      */
     @Column(columnDefinition = "DATE")
-    private Date endDate;
+    private LocalDate endDate;
 
     @Override
     public boolean equals(Object o) {
@@ -51,5 +51,14 @@ public class EquipmentOrganization {
     @Override
     public int hashCode() {
         return Objects.hash(equipment, organization);
+    }
+
+    @Override
+    public String toString() {
+        return "EquipmentOrganization{" +
+                "id=" + id +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                '}';
     }
 }
