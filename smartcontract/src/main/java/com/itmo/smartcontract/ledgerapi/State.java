@@ -1,24 +1,26 @@
 package com.itmo.smartcontract.ledgerapi;
 
+import com.itmo.smartcontract.LocalDateConverter;
+import com.owlike.genson.Genson;
+import com.owlike.genson.GensonBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.json.JSONObject;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import java.time.LocalDate;
 
 @Getter
 @NoArgsConstructor
 public class State {
     protected String key;
+    public final static Genson GENSON = new GensonBuilder().withConverter(new LocalDateConverter(), LocalDate.class).create();
 
     public String[] getSplitKey() {
         return State.splitKey(this.key);
     }
 
-    public static byte[] serialize(Object object) {
-        String jsonStr = new JSONObject(object).toString();
-        return jsonStr.getBytes(UTF_8);
-    }
+    /*public static String serialize(Object object) {
+        return new JSONObject(object).toString();
+    }*/
 
     public static String makeKey(String[] keyParts) {
         return String.join(":", keyParts);
