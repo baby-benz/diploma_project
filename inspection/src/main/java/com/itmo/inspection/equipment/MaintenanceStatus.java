@@ -1,4 +1,4 @@
-package com.itmo.smartcontract.equipment;
+package com.itmo.inspection.equipment;
 
 public enum MaintenanceStatus {
     КОРРЕКТИРУЮЩЕЕ_ОБСЛУЖИВАНИЕ, ЗАПЛАНИРОВАННОЕ_ОБСЛУЖИВАНИЕ, ОБСЛУЖИВАНИЕ_ПО_СОСТОЯНИЮ;
