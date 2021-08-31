@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Set;
 
 @Getter
@@ -27,5 +27,5 @@ public class CreatedEquipmentDto implements Serializable {
 
     private Boolean isTakenIntoAccount;
 
-    private Set<EquipmentOrganizationForNewEquipmentDto> organizations;
+    private Set<NewEquipmentOrganizationDto> organizations;
 }
