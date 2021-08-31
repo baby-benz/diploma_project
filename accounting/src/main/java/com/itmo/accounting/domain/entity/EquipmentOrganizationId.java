@@ -34,4 +34,12 @@ public class EquipmentOrganizationId implements Serializable {
     public int hashCode() {
         return Objects.hash(equipmentId, organizationId);
     }
+
+    @Override
+    public String toString() {
+        return "EquipmentOrganizationId{" +
+                "equipmentId=" + equipmentId +
+                ", organizationId=" + organizationId +
+                '}';
+    }
 }
