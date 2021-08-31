@@ -1,92 +1,121 @@
 package com.itmo.service.equipment;
 
-import com.itmo.smartcontract.ledgerapi.State;
 import lombok.Getter;
 import lombok.Setter;
-import org.hyperledger.fabric.Logger;
-import org.hyperledger.fabric.contract.annotation.DataType;
-import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
-@DataType()
-public final class Equipment extends State {
-    private final static Logger LOG = Logger.getLogger(Equipment.class.getName());
-
-    @Property()
+public final class Equipment {
     private Long equipmentId;
 
-    @Property()
     private String equipmentSerialNumber;
 
-    @Property()
     private EquipmentType equipmentType;
 
-    @Property()
-    private Set<Sensor> sensors = new HashSet<>();
+    private ArrayList<Sensor> sensors;
 
-    @Property()
     private EquipmentLifecycle equipmentLifecycle;
 
-    @Property()
     private RelatedOrganizations relatedOrganizations;
 
-    @Property()
     private EquipmentState equipmentState;
 
-    @Property()
     private MaintenanceStatus maintenanceStatus;
 
-    @Property()
     private String description;
 
-    public Equipment(Long equipmentId, String equipmentSerialNumber, EquipmentType equipmentType, Set<Sensor> sensors,
+    public Equipment(Long equipmentId, String equipmentSerialNumber, EquipmentType equipmentType, ArrayList<Sensor> sensors,
                      EquipmentLifecycle equipmentLifecycle, RelatedOrganizations relatedOrganizations,
                      EquipmentState equipmentState, String description) {
         this.equipmentId = equipmentId;
-        this.key = makeKey(new String[]{this.equipmentId.toString()});
         this.equipmentSerialNumber = equipmentSerialNumber;
         this.equipmentType = equipmentType;
-        this.sensors.addAll(sensors);
+        this.sensors = sensors;
         this.equipmentLifecycle = equipmentLifecycle;
         this.relatedOrganizations = relatedOrganizations;
         this.equipmentState = equipmentState;
         this.description = description;
     }
 
-    public static Equipment deserialize(byte[] data) {
-        JSONObject json = new JSONObject(new String(data, StandardCharsets.UTF_8));
+    public static List<EquipmentHistory> deserializeHistory(JSONArray json) {
+        List<EquipmentHistory> equipmentHistoryList = new ArrayList<>();
 
+        for (int i = 0; i < json.length(); i++) {
+            JSONObject jsonObject = json.getJSONObject(i);
+
+            String txId = jsonObject.getString("txId");
+
+            JSONObject state = jsonObject.getJSONObject("state");
+            Equipment equipment = deserialize(state);
+
+            JSONObject timestampObj = jsonObject.getJSONObject("timestamp");
+            Instant timestamp = Instant.ofEpochSecond(timestampObj.getLong("epochSecond"), timestampObj.getLong("nano"));
+
+            String document = state.optString("document");
+            if (document.isEmpty()) {
+                equipmentHistoryList.add(new EquipmentHistory(txId, equipment, timestamp));
+            } else {
+                equipmentHistoryList.add(new EquipmentHistoryWithDocument(txId, equipment, timestamp, document));
+            }
+        }
+
+        return equipmentHistoryList;
+    }
+
+    public static List<Equipment> deserializeCollection(JSONArray json) {
+        List<Equipment> equipmentList = new ArrayList<>();
+
+        for (int i = 0; i < json.length(); i++) {
+            JSONObject jsonObject = json.getJSONObject(i);
+
+            equipmentList.add(deserialize(jsonObject));
+        }
+
+        return equipmentList;
+    }
+
+    public static Equipment deserialize(JSONObject json) {
         Long equipmentId = json.getLong("equipmentId");
 
         String equipmentSerialNumber = json.getString("equipmentSerialNumber");
 
         EquipmentType equipmentType = json.getEnum(EquipmentType.class, "equipmentType");
 
-        Set<Sensor> sensors = new HashSet<>();
+        ArrayList<Sensor> sensors = new ArrayList<>();
 
         JSONArray sensorsJSONArray = json.getJSONArray("sensors");
 
         for (int i = 0; i < sensorsJSONArray.length(); i++) {
             JSONObject jsonobject = sensorsJSONArray.getJSONObject(i);
 
-            sensors.add(
-                    new Sensor(
-                            jsonobject.getLong("id"),
-                            jsonobject.getInt("rangeMin"),
-                            jsonobject.getInt("rangeMax"),
-                            jsonobject.getString("unit"),
-                            jsonobject.getEnum(SensorType.class, "sensorType")
-                    )
-            );
+            try {
+                Double indication = jsonobject.getDouble("indication");
+
+                sensors.add(
+                        new SensorWithIndication(
+                                jsonobject.getLong("id"),
+                                jsonobject.getString("unit"),
+                                jsonobject.getEnum(SensorType.class, "sensorType"),
+                                indication
+                        )
+                );
+            } catch (JSONException e) {
+                sensors.add(
+                        new Sensor(
+                                jsonobject.getLong("id"),
+                                jsonobject.getString("unit"),
+                                jsonobject.getEnum(SensorType.class, "sensorType")
+                        )
+                );
+            }
         }
 
         EquipmentLifecycle equipmentLifecycle = new EquipmentLifecycle();
@@ -102,10 +131,11 @@ public final class Equipment extends State {
         String EOLDateStr;
         try {
             EOLDateStr = lifecycleJSONObject.getString("EOLDate");
-            if(!EOLDateStr.isEmpty()) {
+            if (!EOLDateStr.isEmpty()) {
                 equipmentLifecycle.setEOLDate(LocalDate.parse(EOLDateStr));
             }
-        } catch (JSONException ignored) { }
+        } catch (JSONException ignored) {
+        }
 
         RelatedOrganizations relatedOrganizations = new RelatedOrganizations();
 
@@ -126,7 +156,8 @@ public final class Equipment extends State {
         try {
             MaintenanceStatus maintenanceStatus = json.getEnum(MaintenanceStatus.class, "maintenanceStatus");
             equipment.setMaintenanceStatus(maintenanceStatus);
-        } catch (JSONException e) { }
+        } catch (JSONException ignore) {
+        }
 
         return equipment;
     }
