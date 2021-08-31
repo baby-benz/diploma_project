@@ -1,4 +1,4 @@
-package com.itmo.smartcontract.equipment;
+package com.itmo.smartcontract.entity.equipment;
 
 public enum SensorType {
     ДАТЧИК_ДАВЛЕНИЯ, ДАТЧИК_ТЕМПЕРАТУРЫ, ДАТЧИК_ОБОРОТОВ;
