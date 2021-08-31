@@ -4,14 +4,14 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
 
 @Getter
 @Setter
-public class EquipmentOrganizationForNewOrganizationDto implements Serializable {
+public class NewOrganizationEquipmentDto implements Serializable {
     private Long equipmentId;
 
-    private Date startDate;
+    private LocalDate startDate;
 
-    private Date endDate;
+    private LocalDate endDate;
 }
