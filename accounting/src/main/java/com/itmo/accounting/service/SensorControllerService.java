@@ -9,6 +9,7 @@ import com.itmo.accounting.repository.SensorRepository;
 import com.itmo.accounting.util.OwnerOrgRequestUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -26,7 +27,7 @@ public class SensorControllerService {
         Sensor savedSensor = sensorRepository.save(sensor);
 
         if(equipmentOfSensor.getIsTakenIntoAccount()) {
-            OwnerOrgRequestUtil.notifyOwnerAboutTerminationOfSubscription(savedSensor.getId(), true);
+            OwnerOrgRequestUtil.notifyOwner(savedSensor.getId(), true);
         }
 
         return savedSensor;
@@ -41,27 +42,31 @@ public class SensorControllerService {
         return sensorRepository.save(sensor);
     }
 
-    public void changeThreshold(Long sensorId, Optional<Integer> rangeMin, Optional<Integer> rangeMax) {
+    public Sensor updateThreshold(Long sensorId, Optional<Integer> rangeMin, Optional<Integer> rangeMax) {
+        final Sensor[] sensor = new Sensor[1];
+
         rangeMin.ifPresentOrElse((min) -> rangeMax.ifPresentOrElse((max) -> {
             if (max > min) {
                 Sensor sensorToChange = sensorRepository.findById(sensorId).orElseThrow();
                 sensorToChange.setRangeMin(min);
                 sensorToChange.setRangeMax(max);
-                sensorRepository.save(sensorToChange);
+                sensor[0] = sensorRepository.save(sensorToChange);
             } else {
-                throw new IllegalArgumentException("Значение нижней границы диапазона должно быть меньше верхней.");
+                throw new IllegalArgumentException("Значение нижней границы диапазона должно быть меньше верхней");
             }
         }, () -> {
             Sensor sensorToChange = sensorRepository.findById(sensorId).orElseThrow();
             sensorToChange.setRangeMin(min);
-            sensorRepository.save(sensorToChange);
+            sensor[0] = sensorRepository.save(sensorToChange);
         }), () -> rangeMax.ifPresentOrElse((max) -> {
             Sensor sensorToChange = sensorRepository.findById(sensorId).orElseThrow();
             sensorToChange.setRangeMax(max);
-            sensorRepository.save(sensorToChange);
+            sensor[0] = sensorRepository.save(sensorToChange);
         }, () -> {
-            throw new EmptyThresholdsException("Одновременно обе границы диапазона не могут быть пустыми.");
+            throw new EmptyThresholdsException("Одновременно обе границы диапазона не могут быть пустыми");
         }));
+
+        return sensor[0];
     }
 
     public Sensor updateSensorType(Long id, SensorType sensorType) {
@@ -70,9 +75,10 @@ public class SensorControllerService {
         return sensorRepository.save(sensorToUpdate);
     }
 
+    @Transactional
     public void deleteSensor(Long id) {
         Sensor sensorToDelete = sensorRepository.findById(id).orElseThrow();
         sensorRepository.delete(sensorToDelete);
-        OwnerOrgRequestUtil.notifyOwnerAboutTerminationOfSubscription(id, false);
+        //OwnerOrgRequestUtil.notifyOwner(id, false);
     }
 }
