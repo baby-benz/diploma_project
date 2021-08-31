@@ -9,14 +9,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.stereotype.Service;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 @Slf4j
-@Service
+//@Service
 @RequiredArgsConstructor
 public class PgNotificationsListener {
     private final SensorRepository sensorRepository;
