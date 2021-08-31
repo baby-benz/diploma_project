@@ -10,10 +10,6 @@ import lombok.Setter;
 public class Sensor {
     private Long id;
 
-    private Integer rangeMin;
-
-    private Integer rangeMax;
-
     private String unit;
 
     private SensorType sensorType;
