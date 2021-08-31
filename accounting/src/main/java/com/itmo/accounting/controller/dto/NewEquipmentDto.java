@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Set;
 
 @Getter
@@ -17,13 +17,13 @@ public class NewEquipmentDto implements Serializable {
 
     private String description;
 
-    private Date manufactureDate;
+    private LocalDate manufactureDate;
 
-    private Date commissioningDate;
+    private LocalDate commissioningDate;
 
     private Set<NewSensorDto> sensors;
 
     private Boolean isTakenIntoAccount;
 
-    private Set<EquipmentOrganizationForNewEquipmentDto> organizations;
+    private Set<NewEquipmentOrganizationDto> organizations;
 }
