@@ -1,4 +1,4 @@
-package com.itmo.smartcontract.equipment;
+package com.itmo.service.equipment;
 
 public enum EquipmentType {
     ЦЕНТРОБЕЖНЫЙ_НАСОС, ПОРШНЕВОЙ_НАСОС, КОМПРЕССОР, ВИНТОВОЙ_ЗАБОЙНЫЙ_ДВИГАТЕЛЬ, СЕПАРАТОР, УЧАСТОК_ТРУБОПРОВОДА, РВС;
