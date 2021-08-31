@@ -1,4 +1,4 @@
-package com.itmo.smartcontract.equipment;
+package com.itmo.service.equipment;
 
 import lombok.Getter;
 import lombok.Setter;
