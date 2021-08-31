@@ -1,37 +1,38 @@
 package com.itmo.service.service;
 
+import com.itmo.service.equipment.Equipment;
+import com.itmo.service.equipment.EquipmentHistory;
 import com.itmo.service.equipment.MaintenanceStatus;
+import com.itmo.service.service.cc.NetworkService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hyperledger.fabric.gateway.*;
-import org.springframework.beans.factory.annotation.Value;
+import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.ContractException;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.expression.AccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ServiceControllerService {
-    Gateway.Builder builder = Gateway.createBuilder();
+    private final NetworkService networkService;
 
-    @Value("${contract.name}")
-    private String contractName;
-    @Value("${contract.username}")
-    private String userName;
-
-    public String startMaintenance(Long equipmentId, String serviceOrg, MaintenanceStatus maintenanceStatus) throws AccessException, TimeoutException {
+    public Equipment startMaintenance(Long equipmentId, String serviceOrg, MaintenanceStatus maintenanceStatus) throws AccessException, TimeoutException {
         Contract contract;
 
         try {
-            contract = accessNetwork();
+            contract = networkService.accessNetwork();
         } catch (IOException e) {
-            throw new AccessException("Не удалось получить доступ к блокчейн-сети");
+            throw new AccessException("Не удалось получить доступ к блокчейн-сети", e);
         }
 
         byte[] response;
@@ -39,18 +40,18 @@ public class ServiceControllerService {
         try {
             if (maintenanceStatus.equals(MaintenanceStatus.КОРРЕКТИРУЮЩЕЕ_ОБСЛУЖИВАНИЕ)) {
                 response = contract.submitTransaction("startCorrectiveMaintenance", equipmentId.toString(),
-                        serviceOrg, LocalDateTime.now().toString());
+                        serviceOrg);
             } else if (maintenanceStatus.equals(MaintenanceStatus.ЗАПЛАНИРОВАННОЕ_ОБСЛУЖИВАНИЕ)) {
                 response = contract.submitTransaction("startPlannedMaintenance", equipmentId.toString(),
-                        serviceOrg, LocalDateTime.now().toString());
+                        serviceOrg);
             } else if (maintenanceStatus.equals(MaintenanceStatus.ОБСЛУЖИВАНИЕ_ПО_СОСТОЯНИЮ)) {
                 response = contract.submitTransaction("startConditionBasedMaintenance", equipmentId.toString(),
-                        serviceOrg, LocalDateTime.now().toString());
+                        serviceOrg);
             } else {
                 throw new IllegalArgumentException("");
             }
         } catch (ContractException e) {
-            String error = String.format("Неверный запрос на совершение транзакции: equipmentId - %s, serviceOrg - %s, maintenanceStatus - %s" ,equipmentId, serviceOrg, maintenanceStatus);
+            String error = String.format("Неверный запрос на совершение транзакции: equipmentId - %s, serviceOrg - %s, maintenanceStatus - %s", equipmentId, serviceOrg, maintenanceStatus);
             log.error(error);
             throw new IllegalArgumentException(error);
         } catch (InterruptedException e) {
@@ -58,23 +59,32 @@ public class ServiceControllerService {
             throw new RuntimeException(e);
         }
 
-        return new String(response, StandardCharsets.UTF_8);
+        String stringResponse = new String(response, StandardCharsets.UTF_8);
+
+        return Equipment.deserialize(new JSONObject(stringResponse));
     }
 
-    public String processMaintenanceReport(Long equipmentId, String serviceOrg, MultipartFile document) throws AccessException, TimeoutException {
+    public Equipment processSingleMaintenanceReport(Long equipmentId, String serviceOrg, MultipartFile document) throws AccessException {
         Contract contract;
 
         try {
-            contract = accessNetwork();
+            contract = networkService.accessNetwork();
         } catch (IOException e) {
-            throw new AccessException("Не удалось получить доступ к блокчейн-сети");
+            throw new AccessException("Не удалось получить доступ к блокчейн-сети", e);
         }
 
         byte[] response;
 
         try {
-            response = contract.submitTransaction("buy", "MagnetoCorp", "00001", "MagnetoCorp", "DigiBank", "4900000", "2020-05-31");
-        }  catch (ContractException e) {
+            try {
+                response = contract.submitTransaction("finishMaintenance", equipmentId.toString(), serviceOrg, Base64.getEncoder().encodeToString(document.getBytes()));
+            } catch (IOException e) {
+                log.error("Ошибка при попытке сериализовать документ");
+                throw new RuntimeException(e);
+            } catch (TimeoutException e) {
+                throw new RuntimeException(e);
+            }
+        } catch (ContractException e) {
             String error = String.format("Неверный запрос на совершение транзакции: equipmentId - %s, serviceOrg - %s, maintenanceStatus - %s", equipmentId, serviceOrg, document);
             log.error(error);
             throw new IllegalArgumentException(error);
@@ -83,22 +93,80 @@ public class ServiceControllerService {
             throw new RuntimeException(e);
         }
 
-        return new String(response, StandardCharsets.UTF_8);
+        String stringResponse = new String(response, StandardCharsets.UTF_8);
+
+        return Equipment.deserialize(new JSONObject(stringResponse));
     }
 
-    private Contract accessNetwork() throws IOException {
-        // Wallet хранит коллекцию identity
-        Wallet wallet = WalletService.getWallet();
+    public List<Equipment> getAllEquipment() throws AccessException {
+        Contract contract;
 
-        Path connectionProfile = Paths.get("..", "gateway", "connection-org1.yaml");
+        try {
+            contract = networkService.accessNetwork();
+        } catch (IOException e) {
+            throw new AccessException("Не удалось получить доступ к блокчейн-сети", e);
+        }
 
-        // Устанавливаем опции подключения для строителя шлюза
-        builder.identity(wallet, userName).networkConfig(connectionProfile).discovery(false);
+        byte[] response;
 
-        Gateway gateway = builder.connect();
+        try {
+            response = contract.evaluateTransaction("queryAllEquipment");
+        } catch (ContractException e) {
+            String error = "Неверный запрос на получение состояния всего оборудования";
+            log.error(error);
+            throw new IllegalArgumentException(error);
+        }
 
-        Network network = gateway.getNetwork("mychannel");
+        String stringResponse = new String(response, StandardCharsets.UTF_8);
 
-        return network.getContract(contractName, "org.papernet.commercialpaper");
+        return Equipment.deserializeCollection(new JSONArray(stringResponse));
+    }
+
+    public Equipment getEquipmentCurrentState(Long equipmentId) throws AccessException {
+        Contract contract;
+
+        try {
+            contract = networkService.accessNetwork();
+        } catch (IOException e) {
+            throw new AccessException("Не удалось получить доступ к блокчейн-сети", e);
+        }
+
+        byte[] response;
+
+        try {
+            response = contract.evaluateTransaction("queryEquipment", equipmentId.toString());
+        } catch (ContractException e) {
+            String error = String.format("Неверный запрос на получение текущего состояния оборудования: equipmentId - %s", equipmentId);
+            log.error(error);
+            throw new IllegalArgumentException(error);
+        }
+
+        String stringResponse = new String(response, StandardCharsets.UTF_8);
+
+        return Equipment.deserialize(new JSONObject(stringResponse));
+    }
+
+    public List<EquipmentHistory> getEquipmentHistory(Long equipmentId) throws AccessException {
+        Contract contract;
+
+        try {
+            contract = networkService.accessNetwork();
+        } catch (IOException e) {
+            throw new AccessException("Не удалось получить доступ к блокчейн-сети", e);
+        }
+
+        byte[] response;
+
+        try {
+            response = contract.evaluateTransaction("queryEquipmentHistory", equipmentId.toString());
+        } catch (ContractException e) {
+            String error = String.format("Неверный запрос на получение истории об оборудовании: equipmentId - %s", equipmentId);
+            log.error(error);
+            throw new IllegalArgumentException(error);
+        }
+
+        String stringResponse = new String(response, StandardCharsets.UTF_8);
+
+        return Equipment.deserializeHistory(new JSONArray(stringResponse));
     }
 }
