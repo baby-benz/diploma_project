@@ -1,8 +1,11 @@
 package com.itmo.smartcontract;
 
-import com.itmo.smartcontract.equipment.Equipment;
+import com.itmo.smartcontract.entity.equipment.Equipment;
+import com.itmo.smartcontract.ledgerapi.StateHistory;
 import com.itmo.smartcontract.ledgerapi.StateList;
 import org.hyperledger.fabric.contract.Context;
+
+import java.util.List;
 
 public class EquipmentList {
     private final StateList stateList;
@@ -20,8 +23,20 @@ public class EquipmentList {
         return (Equipment) this.stateList.getState(equipmentKey);
     }
 
+    public List<StateHistory> getEquipmentHistory(String equipmentKey) {
+        return this.stateList.getStateHistory(equipmentKey);
+    }
+
+    public List<Equipment> getAllEquipment() {
+        return (List<Equipment>) this.stateList.getAllStates();
+    }
+
     public EquipmentList updateEquipment(Equipment equipment) {
         this.stateList.updateState(equipment);
         return this;
+    }
+
+    public void deleteEquipment(String equipmentKey) {
+        this.stateList.deleteState(equipmentKey);
     }
 }
