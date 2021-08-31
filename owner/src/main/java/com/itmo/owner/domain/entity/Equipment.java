@@ -2,6 +2,7 @@ package com.itmo.owner.domain.entity;
 
 import com.vladmihalcea.hibernate.type.basic.PostgreSQLEnumType;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalIdCache;
@@ -15,6 +16,7 @@ import java.util.Set;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @Entity(name = "equipment")
 @TypeDef(
         name = "PGSQL_ENUM",
@@ -87,4 +89,25 @@ public class Equipment {
     @OneToMany(cascade = CascadeType.MERGE, mappedBy = "equipment")
     @NotNull
     private Set<EquipmentOrganization> organizations;
+
+    public Equipment(Equipment another) {
+        this.id = another.id;
+        this.serialNumber = another.serialNumber;
+    }
+
+    @Override
+    public String toString() {
+        return "Equipment{" +
+                "id=" + id +
+                ", serialNumber='" + serialNumber + '\'' +
+                ", equipmentType=" + equipmentType +
+                ", description='" + description + '\'' +
+                ", manufactureDate=" + manufactureDate +
+                ", commissioningDate=" + commissioningDate +
+                ", EOLDate=" + EOLDate +
+                ", sensors=" + sensors +
+                ", isTakenIntoAccount=" + isTakenIntoAccount +
+                ", organizations=" + organizations +
+                '}';
+    }
 }

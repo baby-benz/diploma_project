@@ -10,7 +10,7 @@ import org.hibernate.annotations.TypeDef;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Set;
 
 @Getter
@@ -57,24 +57,24 @@ public class Equipment {
      */
     @Column(columnDefinition = "DATE")
     @NotNull
-    private Date manufactureDate;
+    private LocalDate manufactureDate;
 
     /**
      * Поле commissioningDate - дата ввода в эксплуатацию
      */
     @Column(columnDefinition = "DATE")
-    private Date commissioningDate;
+    private LocalDate commissioningDate;
 
     /**
      * Поле EOLDate - дата окончания срока службы
      */
     @Column(columnDefinition = "DATE")
-    private Date EOLDate;
+    private LocalDate EOLDate;
 
     /**
      * Поле sensors - набор датчиков данного оборудования
      */
-    @OneToMany(mappedBy = "equipment")
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "equipment")
     private Set<Sensor> sensors;
 
     /**
@@ -84,7 +84,23 @@ public class Equipment {
     @Column(columnDefinition = "BOOLEAN")
     private Boolean isTakenIntoAccount;
 
-    @OneToMany(cascade = CascadeType.MERGE, mappedBy = "equipment")
+    @OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL)
     @NotNull
     private Set<EquipmentOrganization> organizations;
+
+    @Override
+    public String toString() {
+        return "Equipment{" +
+                "id=" + id +
+                ", serialNumber='" + serialNumber + '\'' +
+                ", equipmentType=" + equipmentType +
+                ", description='" + description + '\'' +
+                ", manufactureDate=" + manufactureDate +
+                ", commissioningDate=" + commissioningDate +
+                ", EOLDate=" + EOLDate +
+                ", sensors=" + sensors +
+                ", isTakenIntoAccount=" + isTakenIntoAccount +
+                ", organizations=" + organizations +
+                '}';
+    }
 }
