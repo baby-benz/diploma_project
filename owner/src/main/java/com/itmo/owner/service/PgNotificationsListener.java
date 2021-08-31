@@ -3,25 +3,29 @@ package com.itmo.owner.service;
 import com.impossibl.postgres.api.jdbc.PGConnection;
 import com.impossibl.postgres.api.jdbc.PGNotificationListener;
 import com.itmo.owner.domain.entity.Sensor;
+import com.itmo.owner.repository.EquipmentRepository;
 import com.itmo.owner.repository.SensorRepository;
 import com.itmo.owner.service.mqtt.TopicReader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hyperledger.fabric.gateway.ContractException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.ContextRefreshedEvent;
 
+import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 //@Service
 @RequiredArgsConstructor
 public class PgNotificationsListener {
+    private final EquipmentRepository equipmentRepository;
     private final SensorRepository sensorRepository;
+    private final TopicReader topicReader;
 
-    @Value("${spring.datasource.url}")
-    private String dbUrl;
     @Value("${pgjdbc-ng.channel.name.new-critical-equipment}")
     private String newCriticalEquipmentChannelName;
     @Value("${pgjdbc-ng.channel.name.new-critical-sensor}")
@@ -47,20 +51,16 @@ public class PgNotificationsListener {
                 log.info("Received Notification: " + channelName + ", " + payload);
 
                 if (channelName.equals(newCriticalEquipmentChannelName)) {
-                    Long equipmentId = Long.parseLong(payload);
-                    for (Sensor sensor : sensorRepository.findAllByEquipmentId(equipmentId)) {
-                        TopicReader.startRetrievingData(sensor);
-                    }
+                    startReadingEquipmentSensors(payload);
                 } else if (channelName.equals(newCriticalSensorChannelName)) {
-                    Long equipmentId = Long.parseLong(payload);
-                    TopicReader.startRetrievingData(sensorRepository.findById(equipmentId).orElseThrow());
+                    startReadingEquipmentSensors(payload);
                 } else if (channelName.equals(notCriticalEquipmentChannelName)) {
                     Long equipmentId = Long.parseLong(payload);
                     for (Sensor sensor : sensorRepository.findAllByEquipmentId(equipmentId)) {
-                        TopicReader.stopRetrievingData(equipmentId + "/" + sensor.getId());
+                        topicReader.stopRetrievingData(equipmentId + "/" + sensor.getId());
                     }
                 } else {
-                    TopicReader.stopRetrievingData(payload);
+                    topicReader.stopRetrievingData(payload);
                 }
             }
 
@@ -75,6 +75,21 @@ public class PgNotificationsListener {
         listen(newCriticalSensorChannelName);
         listen(notCriticalEquipmentChannelName);
         listen(notCriticalSensorChannelName);
+    }
+
+    private void startReadingEquipmentSensors(String payload) {
+        Long equipmentId = Long.parseLong(payload);
+        try {
+            topicReader.startRetrievingData(equipmentRepository.findById(equipmentId).orElseThrow());
+        } catch (ContractException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+        }
     }
 
     private void listen(String channelName) {
