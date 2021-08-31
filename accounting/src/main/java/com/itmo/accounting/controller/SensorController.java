@@ -28,18 +28,17 @@ public class SensorController {
         return modelMapper.map(sensorControllerService.fullyUpdateSensor(id, modelMapper.map(sensor, Sensor.class)), CreatedSensorDto.class);
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("/sensor-type/{id}")
     public CreatedSensorDto updateSensorType(@PathVariable Long id, @RequestParam SensorType sensorType) {
         return modelMapper.map(sensorControllerService.updateSensorType(id, sensorType), CreatedSensorDto.class);
     }
 
     @PatchMapping("/range/{id}")
-    public String updateThreshold(@PathVariable Long id, @RequestParam Optional<Integer> rangeMin, @RequestParam Optional<Integer> rangeMax) {
-        sensorControllerService.changeThreshold(id, rangeMin, rangeMax);
-        return "Границы диапазона нормальных показаний успешно изменены на: " + rangeMin.orElse(null) + ":" + rangeMax.orElse(null);
+    public CreatedSensorDto updateThreshold(@PathVariable Long id, @RequestParam Optional<Integer> rangeMin, @RequestParam Optional<Integer> rangeMax) {
+        return modelMapper.map(sensorControllerService.updateThreshold(id, rangeMin, rangeMax), CreatedSensorDto.class);
     }
 
-    @DeleteMapping("/range/{id}")
+    @DeleteMapping("/{id}")
     public void deleteSensor(@PathVariable Long id) {
         sensorControllerService.deleteSensor(id);
     }
