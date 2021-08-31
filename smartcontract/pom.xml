@@ -9,6 +9,8 @@
     <description>Last year diploma project on IBM Hyperledger blockchain stack (smartcontract part)</description>
     <properties>
         <java.version>11</java.version>
+
+        <genson.verion>1.6</genson.verion>
     </properties>
 
     <dependencies>
@@ -24,6 +26,12 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
             <version>1.18.20</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.owlike</groupId>
+            <artifactId>genson</artifactId>
+            <version>${genson.verion}</version>
         </dependency>
     </dependencies>
 
