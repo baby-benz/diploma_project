@@ -13,12 +13,12 @@ import java.net.http.HttpResponse;
 @Slf4j
 @UtilityClass
 public class OwnerOrgRequestUtil {
-    public void notifyOwnerAboutTerminationOfSubscription(Long sensorId, boolean toSubscribe) {
+    public void notifyOwner(Long equipmentId, boolean toSubscribe) {
         HttpRequest request;
 
         try {
              request = HttpRequest.newBuilder(
-                    new URI("http://localhost:8181/owner/api/mqtt/sensor/" + sensorId + "?toSubscribe=" + toSubscribe))
+                    new URI("http://localhost:8181/owner/api/mqtt/equipment/" + equipmentId + "?toSubscribe=" + toSubscribe))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.noBody())
                     .build();
