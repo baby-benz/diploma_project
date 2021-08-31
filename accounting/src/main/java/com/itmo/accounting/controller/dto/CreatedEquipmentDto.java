@@ -11,15 +11,17 @@ import java.util.Set;
 @Getter
 @Setter
 public class CreatedEquipmentDto implements Serializable {
+    private Long id;
+
     private String serialNumber;
 
     private EquipmentType equipmentType;
 
     private String description;
 
-    private Date manufactureDate;
+    private LocalDate manufactureDate;
 
-    private Date commissioningDate;
+    private LocalDate commissioningDate;
 
     private Set<CreatedSensorDto> sensors;
 
